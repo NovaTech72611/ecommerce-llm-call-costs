@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
 import { z } from "zod";
-import { runOrderWorkflow } from "./order_workflow.js";
+import { runOrderWorkflow, type OrderInput } from "./order_workflow.js";
 
 const orderSchema = z.object({
   orderId: z.string().min(1),
@@ -29,7 +29,7 @@ createServer(async (request, response) => {
       return;
     }
 
-    const result = await runOrderWorkflow(parsed.data);
+    const result = await runOrderWorkflow(parsed.data as OrderInput);
     response.writeHead(200, { "content-type": "application/json" });
     response.end(JSON.stringify(result));
   } catch (error) {

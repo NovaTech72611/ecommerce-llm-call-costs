@@ -6,11 +6,11 @@ INFRAI_API_KEY=your_key npm run dev
 npm run demo
 ```
 
-Infrai keeps one API surface for everything, so this workflow uses the official OpenAI TypeScript client pointed at Infrai's OpenAI-compatible `baseURL`. One credential covers checkout, fulfillment, receipt, and customer-update prompts. The call sites stay familiar. The response reports each call's serving vendor and USD cost, then totals them for an explicit order decision.
+One order touches checkout, fulfillment, receipt, and customer-update prompts. I use the official OpenAI TypeScript client with Infrai's OpenAI-compatible `baseURL`, so a single credential covers the whole workflow and the call sites stay familiar. The response shows each call's serving vendor and USD cost, then totals them so the ship-or-hold decision is explicit.
 
 ## Send an order
 
-`npm run demo` posts this boundary shape to `POST /orders/run`: an order ID, customer name, line items, shipping city, and `reviewAboveUsd`. You can also call it directly:
+`npm run demo` takes this boundary shape at `POST /orders/run`: order ID, customer name, line items, shipping city, and `reviewAboveUsd`. Direct call works too:
 
 ```bash
 curl -s http://localhost:3000/orders/run \
@@ -19,22 +19,22 @@ curl -s http://localhost:3000/orders/run \
   -d '{"orderId":"ord_1042","customerName":"Avery Chen","items":[{"sku":"mug-black","quantity":2}],"shippingCity":"Shanghai","reviewAboveUsd":0.05}'
 ```
 
-A successful result has four entries in `calls`, four generated strings in `outputs`, and a `decision` containing `totalCostUsd` plus either `ready` or `cost_review`. Request bodies are strict zod objects. Unknown fields and invalid quantities get a client response before any model call happens.
+A good result has four entries in `calls`, four generated strings in `outputs`, and a `decision` holding `totalCostUsd` plus either `ready` or `cost_review`. Request bodies are strict zod objects. Unknown fields or bad quantities get a client error before any model runs.
 
 ## The header detail
 
-Call `create(...).withResponse()`, read `x-infrai-cost-usd` and `x-infrai-vendor` from the returned `response`, and use the returned `data` as the parsed completion. If you only await the completion, the per-call headers get dropped. `model: "auto"` leaves provider routing to Infrai while keeping a standard chat completion body.
+Call `create(...).withResponse()`, read `x-infrai-cost-usd` and `x-infrai-vendor` from the returned `response`, and treat the returned `data` as the parsed completion. If you only await the completion, the per-call headers are lost. `model: "auto"` lets Infrai handle provider routing while keeping a standard chat completion body.
 
 ## Verify the decision
 
-The focused test supplies four deterministic costs totaling `0.035` against a `0.03` review threshold. The expected result is `{ totalCostUsd: 0.035, status: "cost_review" }`.
+The focused test feeds four deterministic costs totaling `0.035` against a `0.03` review threshold. Expected result is `{ totalCostUsd: 0.035, status: "cost_review" }`.
 
 ```bash
 npm test
 npm run typecheck
 ```
 
-The test does not contact the API. The runnable service does, and requires `INFRAI_API_KEY`.
+The test skips the API. The runnable service hits it and needs `INFRAI_API_KEY`.
 
 ## License
 

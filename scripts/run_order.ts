@@ -10,9 +10,6 @@ const response = await fetch("http://localhost:3000/orders/run", {
   })
 });
 
-const body: unknown = await response.json();
-console.log(JSON.stringify(body, null, 2));
+console.log(JSON.stringify(await response.json(), null, 2));
 
-if (!response.ok) {
-  process.exitCode = 1;
-}
+export {};
